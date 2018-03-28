@@ -3,8 +3,8 @@
 var
     http = require('http'),
     https = require('https'),
-    _= require('../lib/lodash'),
-    q = require('../lib/q.js');
+    _= require('./lib/lodash'),
+    q = require('./lib/q.js');
 
 module.exports = function (context, req) {
     context.log('JavaScript HTTP trigger function processed a request.');

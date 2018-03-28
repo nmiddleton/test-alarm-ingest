@@ -1,7 +1,7 @@
 'use strict';
 
 const
-    library = require('../lib'),
+    library = require('../lib/index'),
     moment  = require('moment'),
     _       = require('lodash');
 
