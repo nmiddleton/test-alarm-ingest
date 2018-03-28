@@ -5,23 +5,64 @@ const
     moment  = require('moment'),
     _       = require('lodash');
 
-function SendToCam (cam_message) {
-    let options = {
-        path: '/monitor/alarms/ingestion/alarm_api/v2/events',
-        hostname: '10.54.131.117', //TODO: Replace wth FQDN when Shared Services DCHP issue resolved.
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Host': 'api.compass.int.thomsonreuters.com' //TODO: Remove this line when Shared Services DCHP issue resolved.
-        }
+function SendToCam (cam_message, context) {
+        var options = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': 'zOHtS8xIOE8In1uP7ghbP8jmUdVMvoMB4finmmPU'
+            }
+        };
+        _.set(cam_message, 'domain.provenance. AzureAlarmIngest', {
+            informed_at: new Date().toISOString(),
+            informer: 'azure_cam_function_app'
+        });
+        var stringified_alarm = JSON.stringify(cam_message);
+
+        options.headers['Content-Length'] = stringified_alarm.length;
+        context.log('sending it', stringified_alarm);
+        return https_request(options, stringified_alarm, context);
     };
 
+    function https_request(options, json_stringified_data, context) {
+        'use strict';
+        context.log('https_request');
+        options.path = '/alarm-ingest';
+        options.pathname = '/alarm-ingest';
+        options.host= 'api.alarms.monitor.aws.compass.thomsonreuters.com';
+        options.port = '443';
+        context.log('OPTIONS', options);
+        var deferred = q.defer();
 
-    let stringified_alarm = JSON.stringify(cam_message);
+        var req = https.request(options, function (res) {
+            res.setEncoding('utf8');
+            var response = '';
 
-    options.headers['Content-Length'] = stringified_alarm.length;
+            res.on('data', function (data) {
+                context.log('DATA', data);
+                response += data;
+            });
+            res.on('end', function () {
+                context.log('RESOLVED', res.statusCode, response);
+                deferred.resolve({response: response, headers: res.headers, statusCode: res.statusCode, context: context});
+            });
+            res.on('error', function (error) {
+                context.log('HTTPS error:', error);
+                deferred.reject('HTTPS response error:', error);
+            });
+        });
 
-    return library.http_request(options, stringified_alarm);
-}
+        req.on('error', function(error)  {
+            context.log('REJECTED', error);
+            deferred.reject('HTTPS error:' + error);
+        });
 
+        context.log('json_stringified_data', json_stringified_data);
+        if (json_stringified_data) {
+            req.write(json_stringified_data);
+        }
+        req.end();
+
+        return deferred.promise;
+    };
 module.exports.SendToCam = SendToCam;

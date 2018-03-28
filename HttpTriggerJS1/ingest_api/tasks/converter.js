@@ -158,30 +158,30 @@ function ConvertToCam () {
 
     }
 
-    this.convertToCam = function(alarm, alarm_schema, alarm_schema_version) {
+    this.convertToCam = function(alarm, alarm_schema, alarm_schema_version, context) {
         // console.log(JSON.stringify(alarm,null,4));
         // console.log(alarm_schema);
         // console.log(alarm_schema_version);
         if (alarm_schema === 'CAM' && alarm_schema_version === 2.0) {
-            return q(convertCAMtoCAM(alarm));
+            return q(convertCAMtoCAM(alarm), context);
         }
         if (alarm_schema === 'TR_Log' && alarm_schema_version === 3.0) {
-            return q(convertTRLogV2toCAM(alarm));
+            return q(convertTRLogV2toCAM(alarm), context);
         }
         if (alarm_schema === 'TR_Log' && alarm_schema_version === 4.0) {
-            return q(convertTRLogV4toCAM(alarm));
+            return q(convertTRLogV4toCAM(alarm), context);
         }
         if (alarm_schema === 'Azure Metric Alarm' && alarm_schema_version === 1.0) {
-            return q(convertAzuretoCAM(alarm));
+            return q(convertAzuretoCAM(alarm), context);
         }
         if (alarm_schema === 'Azure Service Health' && alarm_schema_version === 1.0) {
-            return q(convertAzureHealthtoCAM(alarm));
+            return q(convertAzureHealthtoCAM(alarm), context);
         }
         if (alarm_schema === 'DataDog Service Health' && alarm_schema_version === 1.0) {
-            return q(convertDataDogHealthToCAM(alarm));
+            return q(convertDataDogHealthToCAM(alarm), context);
         }
         if (alarm_schema === 'DataDog Service Incident' && alarm_schema_version === 1.0) {
-            return q(convertDataDogServiceIncidentToCAM(alarm));
+            return q(convertDataDogServiceIncidentToCAM(alarm), context);
         }
 
     }
