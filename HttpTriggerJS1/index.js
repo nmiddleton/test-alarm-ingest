@@ -6,7 +6,6 @@ module.exports = function (context, req) {
     context.log('JavaScript HTTP trigger function processed a request.');
     if (req.body ) {
         return alarmingest.ingest(req,context);
-        // context.done();
     }
 
 };
