@@ -1,10 +1,10 @@
 'use strict';
 
 const _ = require('lodash'),
-      moment = require('moment'),
-      q = require('q');
+    moment = require('moment'),
+    q = require('q');
 
-function ConvertToCam () {
+function ConvertToCam() {
 
     let provenance = {
         informed_at: moment.utc().toISOString(),
@@ -12,7 +12,7 @@ function ConvertToCam () {
     };
 
     function convertCAMtoCAM(cam_alarm) {
-        _.merge(cam_alarm,{domain:{provenance:{azure_alarm_ingest_api: provenance}}});
+        _.merge(cam_alarm, {domain: {provenance: {azure_alarm_ingest_api: provenance}}});
         return cam_alarm
     }
 
@@ -21,11 +21,11 @@ function ConvertToCam () {
         return tr_log_alarm //TR Log is passed straight through to CAM without conversion
     }
 
-  function convertTRLogV4toCAM(tr_log_alarm) {
+    function convertTRLogV4toCAM(tr_log_alarm) {
 
-    _.merge(tr_log_alarm,{provenance:{azure_alarm_ingest_api: provenance}});
-    return tr_log_alarm //TR Log is passed straight through to CAM without conversion
-  }
+        _.merge(tr_log_alarm, {provenance: {azure_alarm_ingest_api: provenance}});
+        return tr_log_alarm //TR Log is passed straight through to CAM without conversion
+    }
 
     function convertAzuretoCAM(azure_alarm) {
 
@@ -74,7 +74,7 @@ function ConvertToCam () {
 
         return {
             alarm_type: 'cloud',
-            category: azure_alarm.data.context.activityLog.properties.service + ' - ' +azure_alarm.data.context.activityLog.properties.incidentType,
+            category: azure_alarm.data.context.activityLog.properties.service + ' - ' + azure_alarm.data.context.activityLog.properties.incidentType,
             instance: azure_alarm.data.context.activityLog.subscriptionId,
             end_point_id: azure_alarm.data.context.activityLog.properties.service,
             informer: 'Azure ServiceHealth',
@@ -83,7 +83,7 @@ function ConvertToCam () {
             reporter: 'Azure_Health',
             status: alarm_map[azure_alarm.data.context.activityLog.status],
             domain: {
-                cloud_region_name:azure_alarm.data.context.activityLog.properties.region,
+                cloud_region_name: azure_alarm.data.context.activityLog.properties.region,
                 cloud_account_id: azure_alarm.data.context.activityLog.subscriptionId,
                 cloud_raw_alarm: azure_alarm.data,
                 cloud_impacted_services: JSON.parse(azure_alarm.data.context.activityLog.properties.impactedServices),
@@ -101,7 +101,7 @@ function ConvertToCam () {
             'operational': 'OK',
             'degraded_performance': 'WARNING',
             'partial_outage': 'WARNING',
-            'major_outage' : 'CRITICAL'
+            'major_outage': 'CRITICAL'
         };
 
         return {
@@ -115,7 +115,7 @@ function ConvertToCam () {
             status: alarm_map[datadog_health_alarm.component.status],
             domain: {
                 cloud_region_name: 'Global',
-                cloud_raw_alarm : datadog_health_alarm,
+                cloud_raw_alarm: datadog_health_alarm,
                 cloud_account_id: 'All',
                 cloud_namespace: datadog_health_alarm.component.name,
                 provenance: {
@@ -132,7 +132,7 @@ function ConvertToCam () {
             'resolved': 'OK',
             'investigating': 'WARNING',
             'identified': 'CRITICAL',
-            'monitoring' : 'CRITICAL'
+            'monitoring': 'CRITICAL'
         };
 
         return {
@@ -158,30 +158,30 @@ function ConvertToCam () {
 
     }
 
-    this.convertToCam = function(alarm, alarm_schema, alarm_schema_version, context) {
-        // console.log(JSON.stringify(alarm,null,4));
-        // console.log(alarm_schema);
-        // console.log(alarm_schema_version);
+    this.convertToCam = function (alarm, alarm_schema, alarm_schema_version, context) {
+        context.log(JSON.stringify(alarm, null, 4));
+        context.log(alarm_schema);
+        context.log(alarm_schema_version);
         if (alarm_schema === 'CAM' && alarm_schema_version === 2.0) {
-            return q(convertCAMtoCAM(alarm), context);
+            return q(convertCAMtoCAM(alarm));
         }
         if (alarm_schema === 'TR_Log' && alarm_schema_version === 3.0) {
-            return q(convertTRLogV2toCAM(alarm), context);
+            return q(convertTRLogV2toCAM(alarm));
         }
         if (alarm_schema === 'TR_Log' && alarm_schema_version === 4.0) {
-            return q(convertTRLogV4toCAM(alarm), context);
+            return q(convertTRLogV4toCAM(alarm));
         }
         if (alarm_schema === 'Azure Metric Alarm' && alarm_schema_version === 1.0) {
-            return q(convertAzuretoCAM(alarm), context);
+            return q(convertAzuretoCAM(alarm));
         }
         if (alarm_schema === 'Azure Service Health' && alarm_schema_version === 1.0) {
-            return q(convertAzureHealthtoCAM(alarm), context);
+            return q(convertAzureHealthtoCAM(alarm));
         }
         if (alarm_schema === 'DataDog Service Health' && alarm_schema_version === 1.0) {
-            return q(convertDataDogHealthToCAM(alarm), context);
+            return q(convertDataDogHealthToCAM(alarm));
         }
         if (alarm_schema === 'DataDog Service Incident' && alarm_schema_version === 1.0) {
-            return q(convertDataDogServiceIncidentToCAM(alarm), context);
+            return q(convertDataDogServiceIncidentToCAM(alarm));
         }
 
     }

@@ -6,10 +6,11 @@ const
     Converter = require('../tasks/converter');
 
 exports.ingest = function (req, context) {
-
+    context.log('Ingest:', req.body);
     let validation = validator(req.body),
     res = context.res;
 
+    context.log('Valid:', validation);
     let converter = new Converter();
 
     if (!validation.valid) {
@@ -24,7 +25,8 @@ exports.ingest = function (req, context) {
         });
     } else {
         converter.convertToCam(req.body,validation.alarm_schema,validation.alarm_schema_version, context)
-            .then(function (converted, context) {
+            .then(function (converted) {
+                context.log('Converted:', converted);
                 return publisher.SendToCam(converted, context)
                     .then(function () {
                         res.status(200).json({
