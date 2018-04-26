@@ -2,7 +2,8 @@
 
 const _ = require('lodash'),
     moment = require('moment'),
-    q = require('q');
+    q = require('q'),
+    tagger = require('./tagger');
 
 function ConvertToCam() {
 
@@ -27,7 +28,7 @@ function ConvertToCam() {
         return tr_log_alarm //TR Log is passed straight through to CAM without conversion
     }
 
-    function convertAzuretoCAM(azure_alarm) {
+    function convertAzuretoCAM(azure_alarm, context) {
 
         let alarm_map = {
             'Activated': 'CRITICAL',
@@ -42,57 +43,64 @@ function ConvertToCam() {
             occurred_at = provenance.informed_at;
         }
 
-        return {
-            alarm_type: 'cloud',
-            category: azure_alarm.context.condition.metricName,
-            end_point_id: azure_alarm.context.resourceName,
-            informer: azure_alarm.context.resourceName,
-            message: azure_alarm.context.condition.metricName + ' ' + azure_alarm.context.condition.operator + ' ' + azure_alarm.context.condition.threshold + ' ' + azure_alarm.context.condition.metricUnit,
-            occurred_at: occurred_at,
-            reporter: 'Azure',
-            status: status,
-            domain: {
-                cloud_account_id: azure_alarm.context.subscriptionId,
-                cloud_region_name: azure_alarm.context.resourceRegion,
-                cloud_namespace: azure_alarm.context.resourceType,
-                cloud_raw_alarm: azure_alarm,
-                provenance: {
-                    azure_alarm_ingest_api: provenance
-                }
-            }
-        };
+        return tagger.getTags(azure_alarm, context).then(
+            function(tags){
+                return {
+                    alarm_type: 'cloud',
+                    category: azure_alarm.context.condition.metricName,
+                    end_point_id: azure_alarm.context.resourceName,
+                    informer: azure_alarm.context.resourceName,
+                    message: azure_alarm.context.condition.metricName + ' ' + azure_alarm.context.condition.operator + ' ' + azure_alarm.context.condition.threshold + ' ' + azure_alarm.context.condition.metricUnit,
+                    occurred_at: occurred_at,
+                    reporter: 'Azure',
+                    status: status,
+                    domain: {
+                        cloud_account_id: azure_alarm.context.subscriptionId,
+                        cloud_region_name: azure_alarm.context.resourceRegion,
+                        cloud_namespace: azure_alarm.context.resourceType,
+                        cloud_raw_alarm: azure_alarm,
+                        provenance: {
+                            azure_alarm_ingest_api: provenance
+                        },
+                        cloud_tags: tags
+                    }
+                };
+            })
     }
 
 
-    function convertAzureHealthtoCAM(azure_alarm) {
+    function convertAzureHealthtoCAM(azure_alarm, context) {
 
         let alarm_map = {
             'Activated': 'CRITICAL',
             'Resolved': 'OK',
             'Active': 'CRITICAL'
         };
-
-        return {
-            alarm_type: 'cloud',
-            category: azure_alarm.data.context.activityLog.properties.service + ' - ' + azure_alarm.data.context.activityLog.properties.incidentType,
-            instance: azure_alarm.data.context.activityLog.subscriptionId,
-            end_point_id: azure_alarm.data.context.activityLog.properties.service,
-            informer: 'Azure ServiceHealth',
-            message: azure_alarm.data.context.activityLog.properties.communication,
-            occurred_at: moment(azure_alarm.data.context.activityLog.eventTimestamp).toISOString(),
-            reporter: 'Azure_Health',
-            status: alarm_map[azure_alarm.data.context.activityLog.status],
-            domain: {
-                cloud_region_name: azure_alarm.data.context.activityLog.properties.region,
-                cloud_account_id: azure_alarm.data.context.activityLog.subscriptionId,
-                cloud_raw_alarm: azure_alarm.data,
-                cloud_impacted_services: JSON.parse(azure_alarm.data.context.activityLog.properties.impactedServices),
-                provenance: {
-                    azure_alarm_ingest_api: provenance
-                }
-            },
-            correlation_signature: ['end_point_id', 'domain.azure_region_name', 'category', 'instance']
-        };
+        return tagger.getTags(azure_alarm, context).then(
+            function(tags){
+                return {
+                    alarm_type: 'cloud',
+                    category: azure_alarm.data.context.activityLog.properties.service + ' - ' + azure_alarm.data.context.activityLog.properties.incidentType,
+                    instance: azure_alarm.data.context.activityLog.subscriptionId,
+                    end_point_id: azure_alarm.data.context.activityLog.properties.service,
+                    informer: 'Azure ServiceHealth',
+                    message: azure_alarm.data.context.activityLog.properties.communication,
+                    occurred_at: moment(azure_alarm.data.context.activityLog.eventTimestamp).toISOString(),
+                    reporter: 'Azure_Health',
+                    status: alarm_map[azure_alarm.data.context.activityLog.status],
+                    domain: {
+                        cloud_region_name: azure_alarm.data.context.activityLog.properties.region,
+                        cloud_account_id: azure_alarm.data.context.activityLog.subscriptionId,
+                        cloud_raw_alarm: azure_alarm.data,
+                        cloud_impacted_services: JSON.parse(azure_alarm.data.context.activityLog.properties.impactedServices),
+                        provenance: {
+                            azure_alarm_ingest_api: provenance
+                        },
+                        cloud_tags: tags
+                    },
+                    correlation_signature: ['end_point_id', 'domain.azure_region_name', 'category', 'instance']
+                };
+            });
     }
 
     function convertDataDogHealthToCAM(datadog_health_alarm) {
@@ -172,10 +180,10 @@ function ConvertToCam() {
             return q(convertTRLogV4toCAM(alarm));
         }
         if (alarm_schema === 'Azure Metric Alarm' && alarm_schema_version === 1.0) {
-            return q(convertAzuretoCAM(alarm));
+            return q(convertAzuretoCAM(alarm, context));
         }
         if (alarm_schema === 'Azure Service Health' && alarm_schema_version === 1.0) {
-            return q(convertAzureHealthtoCAM(alarm));
+            return q(convertAzureHealthtoCAM(alarm, context));
         }
         if (alarm_schema === 'DataDog Service Health' && alarm_schema_version === 1.0) {
             return q(convertDataDogHealthToCAM(alarm));

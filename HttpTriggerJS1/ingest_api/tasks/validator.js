@@ -17,7 +17,7 @@ const CAM_v2 = {
         category: {type: 'string', allowEmpty: false, required: true},
         message: {type: 'string', allowEmpty: false, required: true},
         informer: {type: 'string', allowEmpty: false, required: true},
-        occurred_at: {type: 'string', allowEmpty: false, required: true, format: 'date-time'},
+        occurred_at: {type: 'string', allowEmpty: false, required: true},
         //non-mandatory fields
         instance: {type: 'string', allowEmpty: false, required: false},
         domain: {type: 'object', allowEmpty: false, required: false},
@@ -94,7 +94,7 @@ const AzureMetricAlarm = {
                 resourceType: {type: 'string', allowEmpty: false, required: true},
                 resourceRegion: {type: 'string', allowEmpty: false, required: true},
                 portalLink: {type: 'string', allowEmpty: false, required: true},
-                timestamp: {type: 'string', allowEmpty: false, required: true},
+                timestamp: {type: ['string', 'object'], allowEmpty: false, required: true},
                 id: {type: 'string', allowEmpty: false, required: true},
                 name: {type: 'string', allowEmpty: false, required: true},
                 description: {type: 'string', allowEmpty: true, required: true},

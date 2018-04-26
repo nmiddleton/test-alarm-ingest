@@ -3,7 +3,8 @@
 const
     publisher = require('../tasks/publisher'),
     validator = require('../tasks/validator'),
-    Converter = require('../tasks/converter');
+    Converter = require('../tasks/converter'),
+    tagger    = require('../tasks/tagger');
 
 exports.ingest = function (req, context) {
     context.log('Ingest:', req.body);
